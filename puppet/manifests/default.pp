@@ -1,6 +1,7 @@
 
 include apt
 include php
+include nodejs
 
 Apt::Ppa <| |>
   -> Php::Extension <| |>
@@ -54,9 +55,19 @@ file { "nginx-config":
   notify  => Service['nginx']
 }
 
-class { 'nodejs': }
-
 package { 'npm':
   ensure => present,
   require => Anchor['nodejs::repo']
 }
+
+package { 'gulp':
+  ensure   => present,
+  provider => 'npm',
+  require => Package['npm'],
+}
+package { 'bower':
+  ensure   => present,
+  provider => 'npm',
+  require => Package['npm'],
+}
+
