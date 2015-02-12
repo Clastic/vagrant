@@ -12,6 +12,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.provision :shell, :inline => "apt-get update"
   config.vm.provision "shell", inline: "puppet module install nodes-php"
+  config.vm.provision "shell", inline: "puppet module install puppetlabs-nodejs"
 
   config.vm.provision :puppet do |puppet|
     puppet.manifests_path = "puppet/manifests"

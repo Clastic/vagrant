@@ -53,3 +53,10 @@ file { "nginx-config":
   content => template('/vagrant/puppet/templates/site.conf.erb'),
   notify  => Service['nginx']
 }
+
+class { 'nodejs': }
+
+package { 'npm':
+  ensure => present,
+  require => Anchor['nodejs::repo']
+}
