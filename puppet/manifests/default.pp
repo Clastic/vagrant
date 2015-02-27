@@ -1,7 +1,17 @@
 
+##############################################
+# Includes
+##############################################
+
 include apt
 include php
+include php::pear
+include php::composer
 include nodejs
+
+##############################################
+# Resolve order
+##############################################
 
 Apt::Ppa <| |>
   -> Php::Extension <| |>
@@ -10,6 +20,9 @@ Apt::Ppa <| |>
 
 Apt::Source <| |> -> Package <| |>
 
+##############################################
+# PHP
+##############################################
 
 apt::ppa { 'ppa:ondrej/php5-5.6': }
 apt::key { "ondrej":
@@ -39,11 +52,17 @@ php::config { 'php-fpm-clastic':
   ]
 }
 
+
+##############################################
+# nginx
+##############################################
+
 package { 'nginx':
   ensure => "installed",
 }
 service { 'nginx':
-  ensure => 'running',
+  ensure  => 'running',
+  require => Package['nginx'],
 }
 
 file { "nginx-config":
@@ -55,19 +74,61 @@ file { "nginx-config":
   notify  => Service['nginx']
 }
 
+##############################################
+# node & npm
+##############################################
+
 package { 'npm':
-  ensure => present,
+  ensure  => present,
   require => Anchor['nodejs::repo']
+}
+file { '/usr/bin/node':
+  ensure  => 'link',
+  target  => '/usr/bin/nodejs',
+  require => Package['npm'],
 }
 
 package { 'gulp':
   ensure   => present,
   provider => 'npm',
-  require => Package['npm'],
+  require  => Package['npm'],
 }
 package { 'bower':
   ensure   => present,
   provider => 'npm',
-  require => Package['npm'],
+  require  => Package['npm'],
 }
 
+##############################################
+# mysql
+##############################################
+
+class { '::mysql::server':
+  root_password    => 'vagrant',
+  override_options => {
+    'mysqld' => {
+      'bind-address' => '0.0.0.0'
+    }
+  }
+}
+mysql_user { 'clastic@%/*.*':
+  ensure                   => 'present',
+  max_connections_per_hour => '0',
+  max_queries_per_hour     => '0',
+  max_updates_per_hour     => '0',
+  max_user_connections     => '0',
+}
+
+mysql_database { 'clastic_dev':
+  ensure  => 'present',
+  charset => 'utf8',
+  collate => 'utf8_general_ci',
+}
+
+mysql_grant { 'clastic@%/*.*':
+  ensure     => 'present',
+  options    => ['GRANT'],
+  privileges => ['ALL'],
+  table      => '*.*',
+  user       => 'clastic@%',
+}
